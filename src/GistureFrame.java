@@ -114,44 +114,44 @@ public class GistureFrame extends JFrame implements ActionListener {
         // 关键修改2：注释掉pack()，否则它会覆盖setSize()的效果，让窗口变小
         // this.pack();
     }
-public void checkgisture() {
-    String username = usernameField.getText().trim();
-    String password = new String(passwordField.getPassword());
-    String checkpassword = new String(checkpasswordField.getPassword());
-    //判断用户名是否存在
-    for (user u : user.userList) { // Assuming user.userList is accessible
-        if (u.getName().equals(username)) {
-            JOptionPane.showMessageDialog(this, "用户名已存在", "错误", JOptionPane.ERROR_MESSAGE);
-            System.out.println("GistureFrame DEBUG: 用户名已存在");
+    public void checkgisture() {
+        String username = usernameField.getText().trim();
+        String password = new String(passwordField.getPassword());
+        String checkpassword = new String(checkpasswordField.getPassword());
+        //判断用户名是否存在
+        for (user u : user.userList) { // Assuming user.userList is accessible
+            if (u.getName().equals(username)) {
+                JOptionPane.showMessageDialog(this, "用户名已存在", "错误", JOptionPane.ERROR_MESSAGE);
+                System.out.println("GistureFrame DEBUG: 用户名已存在");
+                return;
+            }
+        }
+        if (username.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "用户名不能为空", "错误", JOptionPane.ERROR_MESSAGE);
             return;
         }
-    }
-    if (username.isEmpty()) {
-        JOptionPane.showMessageDialog(this, "用户名不能为空", "错误", JOptionPane.ERROR_MESSAGE);
-        return;
-    }
 
-    if (password.equals(checkpassword)) {
-        System.out.println("GistureFrame DEBUG: 密码一致，准备连接服务器进行注册用户: " + username);
-        ChatClient tempClient = new ChatClient("RegClient-" + username); // 给临时客户端一个可识别的名字
-        if (tempClient.connect(0)) { // mode 0 for registration, does not send TOLOGIN
-            System.out.println("GistureFrame DEBUG: 成功连接到服务器 (tempClient)。准备发送注册命令。");
-            tempClient.registerNewUser(username, password); // 这个方法现在内部会打印更多日志
-            System.out.println("GistureFrame DEBUG: registerNewUser 方法已调用。客户端连接状态: " + tempClient.isConnected());
-            tempClient.sendCommand("RETOLOGIN");
-            JOptionPane.showMessageDialog(this, "注册请求已发送。", "提示", JOptionPane.INFORMATION_MESSAGE);
-            this.dispose();
-            new LoginFrame().setVisible(true); // 重新创建 LoginFrame
+        if (password.equals(checkpassword)) {
+            System.out.println("GistureFrame DEBUG: 密码一致，准备连接服务器进行注册用户: " + username);
+            ChatClient tempClient = new ChatClient("RegClient-" + username); // 给临时客户端一个可识别的名字
+            if (tempClient.connect(0)) { // mode 0 for registration, does not send TOLOGIN
+                System.out.println("GistureFrame DEBUG: 成功连接到服务器 (tempClient)。准备发送注册命令。");
+                tempClient.registerNewUser(username, password); // 这个方法现在内部会打印更多日志
+                System.out.println("GistureFrame DEBUG: registerNewUser 方法已调用。客户端连接状态: " + tempClient.isConnected());
+                tempClient.sendCommand("RETOLOGIN");
+                JOptionPane.showMessageDialog(this, "注册请求已发送。", "提示", JOptionPane.INFORMATION_MESSAGE);
+                this.dispose();
+                new LoginFrame().setVisible(true); // 重新创建 LoginFrame
+            } else {
+                System.err.println("GistureFrame DEBUG: 连接服务器失败 (tempClient)。注册中止。");
+                JOptionPane.showMessageDialog(this, "无法连接到服务器进行注册。请稍后再试。", "连接错误", JOptionPane.ERROR_MESSAGE);
+                // 确保用户知道注册未发生
+            }
         } else {
-            System.err.println("GistureFrame DEBUG: 连接服务器失败 (tempClient)。注册中止。");
-            JOptionPane.showMessageDialog(this, "无法连接到服务器进行注册。请稍后再试。", "连接错误", JOptionPane.ERROR_MESSAGE);
-            // 确保用户知道注册未发生
+            JOptionPane.showMessageDialog(this, "两次密码不一致", "错误", JOptionPane.ERROR_MESSAGE);
+            System.out.println("GistureFrame DEBUG: 两次密码不一致。");
         }
-    } else {
-        JOptionPane.showMessageDialog(this, "两次密码不一致", "错误", JOptionPane.ERROR_MESSAGE);
-        System.out.println("GistureFrame DEBUG: 两次密码不一致。");
     }
-}
     @Override
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
