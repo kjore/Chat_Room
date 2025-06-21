@@ -646,10 +646,10 @@ public class HomePageFrame extends JFrame implements ChatClient.MessageCallback 
     }
     private void setupRefreshTimer() {
         // 创建一个每分钟执行一次的定时器
-        Timer refreshTimer = new Timer(1000, e -> {
+        Timer refreshTimer = new Timer(15000, e -> {
             refreshUserList();
             refreshGroupList();
-            System.out.println("自动刷新列表完成: " + new Date());
+            //System.out.println("自动刷新列表完成: " + new Date());
         });
 
         // 启动定时器
