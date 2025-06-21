@@ -125,18 +125,20 @@ public class ClientHandler implements Runnable {
         /* ========== 私聊文件：发起端 ========== */
         else if (message.startsWith("FILE_OFFER ")) {
             // 格式: FILE_OFFER <toUser> <fileName> <size>
-            String[] p = message.split(" ", 4);
+            String[] p = message.split(" ", 5);
             String to = p[1];
             server.forwardToUser(to, message);
+            System.out.println("服务器收到文件，向目标客户端传输");
         }
         else if (message.startsWith("FILE_ACCEPT ")) {
             // 对端同意接收: FILE_ACCEPT <fromUser>
             String to = message.split(" ")[1];
             server.forwardToUser(to, message);
+            System.out.println("同意接受");
         }
         else if (message.startsWith("FILE_CONNECT ")) {
-            // 发起方告知接收方 IP+端口: FILE_CONNECT <toUser> <ip> <port>
-            String to = message.split(" ")[1];
+            // 发起方告知接收方 IP+端口: FILE_CONNECT <fromUser> <ip> <port> <fileName>
+            String to = message.split(" ", 5)[1];
             server.forwardToUser(to, message);
         }
         /* ========== 群文件上传/下载命令 ========== */
