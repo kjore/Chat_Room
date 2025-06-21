@@ -141,23 +141,17 @@ public class ChatBubblePanel extends JPanel {
         // 使用 80% 的宽度
         final int maxBubbleWidth = Math.max((int)(parentWidth * 0.60), 200);
 
-        // --- 消息内容处理 (最终修复方案) ---
+        // --- 消息内容处理 ---
         JComponent contentComponent;
         if (message.isFile()) {
             contentComponent = createFileComponent(message.getContent());
         } else {
-            // [高度修复] 用 JLabel 替代 JTextPane，以获得稳定可靠的尺寸计算
             JLabel textLabel = new JLabel();
             textLabel.setForeground(Color.BLACK);
             textLabel.setFont(getFont());
 
-            // 1. 获取用于测量字体的 FontMetrics
             FontMetrics fm = textLabel.getFontMetrics(textLabel.getFont());
-
-            // 2. 调用我们的手动换行方法，获取带有 \n 的、预先排版好的文本
             String wrappedText = wrapTextByChar(message.getContent(), fm, maxBubbleWidth);
-
-            // 3. 将 \n 转换为 <br>，然后创建 HTML 文本给 JLabel
             String htmlText = "<html>" + wrappedText.replaceAll("\n", "<br/>") + "</html>";
             textLabel.setText(htmlText);
 
@@ -166,35 +160,22 @@ public class ChatBubblePanel extends JPanel {
 
         bubblePanel.add(contentComponent, BorderLayout.CENTER);
 
-        // --- 时间和整体布局 (不变) ---
-        JLabel timeLabel = new JLabel(formatTime(message.getTime()));
-        timeLabel.setForeground(Color.GRAY);
-        timeLabel.setFont(new Font(timeLabel.getFont().getName(), Font.PLAIN, 9));
-
-        JPanel bubbleTimePanel = new JPanel(new BorderLayout(5, 1));
-        bubbleTimePanel.setOpaque(false);
-        bubbleTimePanel.add(bubblePanel, BorderLayout.CENTER);
-
-        JPanel timePanel = new JPanel(new FlowLayout(isMyMessage ? FlowLayout.RIGHT : FlowLayout.LEFT));
-        timePanel.setOpaque(false);
-        timePanel.add(timeLabel);
-        bubbleTimePanel.add(timePanel, BorderLayout.SOUTH);
-
+        // --- 整体布局 (移除时间相关代码) ---
         JPanel completeMessagePanel = new JPanel();
         completeMessagePanel.setOpaque(false);
         completeMessagePanel.setLayout(new BoxLayout(completeMessagePanel, BoxLayout.X_AXIS));
 
-        bubbleTimePanel.setAlignmentY(Component.TOP_ALIGNMENT);
+        bubblePanel.setAlignmentY(Component.TOP_ALIGNMENT);
         avatarLabel.setAlignmentY(Component.TOP_ALIGNMENT);
 
         if (isMyMessage) {
-            completeMessagePanel.add(bubbleTimePanel);
+            completeMessagePanel.add(bubblePanel);
             completeMessagePanel.add(Box.createHorizontalStrut(2));
             completeMessagePanel.add(avatarLabel);
         } else {
             completeMessagePanel.add(avatarLabel);
             completeMessagePanel.add(Box.createHorizontalStrut(2));
-            completeMessagePanel.add(bubbleTimePanel);
+            completeMessagePanel.add(bubblePanel);
         }
 
         if (isMyMessage) {
@@ -203,14 +184,11 @@ public class ChatBubblePanel extends JPanel {
             messagePanel.add(completeMessagePanel, BorderLayout.WEST);
         }
 
-        // *** 核心修复代码 ***
-        // 设置面板的最大高度等于其首选高度，防止被BoxLayout纵向拉伸。
-        // 这里的 Short.MAX_VALUE 表示宽度可以随意变大（以适应窗口宽度），但高度被严格限制住了。
+        // 防止被BoxLayout纵向拉伸
         messagePanel.setMaximumSize(new Dimension(Short.MAX_VALUE, messagePanel.getPreferredSize().height));
 
         return messagePanel;
     }
-
     private JLabel createAvatarLabel(String username, boolean isMyMessage) {
         // 使用完整用户名而不是仅第一个字符
         String displayText = username;
