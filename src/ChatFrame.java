@@ -17,7 +17,6 @@ import java.util.Map;
 public class ChatFrame extends JFrame implements ActionListener {
 
 
-
     /* ===== UI 组件 ===== */
     // private final JTextArea chatArea = new JTextArea(); // 删除这行
     private final ChatBubblePanel chatBubblePanel; // 替换为气泡面板
