@@ -85,7 +85,7 @@ public class LoginFrame extends JFrame implements ActionListener {
 
     public void initComponentsLayout() {
         // --- 背景设置 ---
-        ImageIcon bg = new ImageIcon("1.png"); // 确保 img.png 在正确路径
+        ImageIcon bg = new ImageIcon("1.png"); // 确保 1.png 在正确路径
         JLabel label = new JLabel(bg);
         label.setBounds(0, 0, bg.getIconWidth(), bg.getIconHeight());
         this.getLayeredPane().add(label, Integer.valueOf(Integer.MIN_VALUE));
