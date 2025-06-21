@@ -36,7 +36,7 @@ public class GistureFrame extends JFrame implements ActionListener {
         // 注意：你之前直接对JFrame设置了布局，但更标准的做法是操作其内容面板
         // this.setLayout(new GridBagLayout()); // 这一行可以移除
 
-        ImageIcon bg = new ImageIcon("1.png"); // 确保 img.png 在项目根目录或正确路径下
+        ImageIcon bg = new ImageIcon("1.png"); // 确保 1.png 在项目根目录或正确路径下
 
         // --- 背景设置 ---
         JLabel label = new JLabel(bg);
