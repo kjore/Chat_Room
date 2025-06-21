@@ -10,7 +10,7 @@ public class Group {
     private List<String> members; // 成员用户名列表
 
     // 存储所有群组的列表
-   public static List<Group> groupList = new ArrayList<>();
+    public static List<Group> groupList = new ArrayList<>();
 
 
     /**
