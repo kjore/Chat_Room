@@ -65,7 +65,7 @@ public class ChatServer {
         ClientHandler old = ONLINE.put(username, handler);   // 原子替换并取旧值
         if (old != null && old != handler) {
             old.sendMessage("ACCOUNT_CONFLICT");             // 告知旧客户端
-           // old.close();                                     // 关闭旧 socket
+            // old.close();                                     // 关闭旧 socket
         }
 
         System.out.println("用户 " + username + " 已登录 (当前在线数: " + ONLINE.size() + ")");
@@ -277,7 +277,12 @@ public class ChatServer {
     public void forwardToUser(String username, String msg)//处理文件
     {
         ClientHandler h = ONLINE.get(username);
-        if(h!=null) h.sendMessage(msg);
+        if(h!=null)
+        {
+            System.out.println("对方在线，可以发送");
+            h.sendMessage(msg);
+        }
+
     }
 
     /**
