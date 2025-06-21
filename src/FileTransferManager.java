@@ -16,6 +16,7 @@ public class FileTransferManager {
         }
     }
 
+
     /* ===== 群文件下载 ===== */
     public static void downloadGroup(String gid,String name,File save) throws IOException{
         try(Socket s=new Socket(SERVER_ADDRESS, FILE_PORT);
