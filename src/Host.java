@@ -13,3 +13,4 @@ public class Host extends user {
         this.chatClient = chatClient;
     }
 }
+
