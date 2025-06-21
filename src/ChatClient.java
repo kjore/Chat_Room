@@ -15,10 +15,9 @@ import javax.swing.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class ChatClient {
     private Socket socket; // 用于与服务器进行网络通信的套接字
@@ -28,6 +27,13 @@ public class ChatClient {
     private boolean isConnected = false; //标记客户端是否已连接到服务器，默认为 false
     private static final String SERVER_ADDRESS = "127.0.0.1"; // 服务器的 IP 地址 (本地回环地址)   此地址在不同设备登陆时需要改为实际服务器地址  总共有两个需要改
     private static final int SERVER_PORT = 8070; // 服务器监听的端口号
+
+
+    private static volatile String pendingPeer   = null;   // 发送端：对方
+    private static volatile File   pendingFile   = null;   // 发送端：文件
+    private static volatile String incomingPeer  = null;   // 接收端：发送方
+    private static volatile File   incomingSave  = null;   // 接收端：保存路径
+
 
     // 监听服务器消息的线程
     private Thread messageListener;
@@ -333,56 +339,110 @@ public class ChatClient {
             }
         }
 
-        // 可以根据需要添加更多类型的服务器消息处理
-        /* A. 收到文件邀请 */
+        /* A. 收到文件邀请 → 只弹一次“保存到哪儿” */
         else if (message.startsWith("FILE_OFFER ")) {
-            // 弹窗询问是否接受
-            String[] p = message.split(" ", 4);
-            String from  = p[1], name = p[2], size = p[3];
-            int opt = JOptionPane.showConfirmDialog(null,
-                    from+" 想发送文件 "+name+" ("+size+" bytes)，是否接受？",
-                    "文件邀请", JOptionPane.YES_NO_OPTION);
+            if (incomingSave != null)
+            { sendCommand("FILE_DENY " + username); return; }
 
-            if(opt==JOptionPane.YES_OPTION) {
-                sendCommand("FILE_ACCEPT "+from);
+            String[] p = message.split(" ", 5);
+            String to   = p[1];
+            String from = p[2];
+            String FileName = p[3];
+            String size = p[4];
+
+            JFileChooser fc = new JFileChooser();
+            fc.setDialogTitle(from + " 想发送文件 (" + size + " bytes)");
+            fc.setSelectedFile(new File(FileName));
+
+            if (fc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+                incomingPeer = from;           // 发送者昵称
+                incomingSave = fc.getSelectedFile();
+                // ★ ACK 填发送者昵称
+                sendCommand("FILE_ACCEPT " + from);
             } else {
-                sendCommand("FILE_DENY "+from);
+                sendCommand("FILE_DENY " + from);
             }
         }
 
-        /* B. 对方接受 → 发起端启动 ServerSocket 并告诉对方地址 */
+
+        /* B. 我（发送端）收到对方的 ACCEPT */
         else if (message.startsWith("FILE_ACCEPT ")) {
-            String toUser =message.split(" ")[1];
-            JFileChooser fc = new JFileChooser();             // 选文件
-            if(fc.showOpenDialog(null)==JFileChooser.APPROVE_OPTION){
-                File f = fc.getSelectedFile();
-                try{
-                    int port = FileTransferManager.serveFileOnce(f);   // 监听
-                    String ip = InetAddress.getLocalHost().getHostAddress();
-                    sendCommand("FILE_CONNECT "+toUser+" "+ip+" "+port);
-                }catch(Exception ex){ex.printStackTrace();}
+
+            if (pendingPeer == null || pendingFile == null) {
+                System.out.println("Peer="+pendingPeer+" File="+pendingFile);
+                System.err.println("⚠️ 没有待发送文件，却收到了 FILE_ACCEPT");
+                return;
+            }
+
+            try {
+                int    port = FileTransferManager.serveFileOnce(pendingFile);
+                String ip   = InetAddress.getLocalHost().getHostAddress();
+
+                /* ★★★ 在第 2 段加上自己的昵称 (myName / username) ★★★ */
+                String cmd = "FILE_CONNECT "
+                        + pendingPeer      // 字段 1: 目标 (toUser)
+                        + " " + username     // 字段 2: 发送者 (fromUser)
+                        + " " + ip
+                        + " " + port
+                        + " " + pendingFile.getName();
+
+                System.out.println("SEND>> " + cmd);
+                sendCommand(cmd);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(null,
+                        "文件发送失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            } finally {
+                pendingPeer = null;
+                pendingFile = null;
             }
         }
+
 
         /* C. 对方拒绝 */
         else if (message.startsWith("FILE_DENY ")) {
-            JOptionPane.showMessageDialog(null,"对方拒绝接收文件");
+            // 直接清空发送端状态
+            pendingPeer = null;
+            pendingFile = null;
+            JOptionPane.showMessageDialog(null, "对方拒绝接收文件");
         }
 
-        /* D. 收到连接信息 → 接收端开始下载 */
+        /* D. 我（接收端）收到连接信息 → 开始下载 */
+        /* D. 收到连接信息 → 开始下载 */
         else if (message.startsWith("FILE_CONNECT ")) {
-            String[] p = message.split(" ");
-            String ip = p[2]; int port = Integer.parseInt(p[3]);
-            JFileChooser fc = new JFileChooser();             // 选择保存路径
-            if(fc.showSaveDialog(null)==JFileChooser.APPROVE_OPTION){
-                new Thread(() -> {
-                    try{
-                        FileTransferManager.receiveFile(ip,port,fc.getSelectedFile());
-                        JOptionPane.showMessageDialog(null,"文件接收完成");
-                    }catch(Exception ex){ex.printStackTrace();}
-                }).start();
+            // FILE_CONNECT <toUser> <fromUser> <ip> <port> <fileName>
+            String[] p = message.split(" ", 6);
+            String toUser   = p[1];          // lty
+            String fromUser = p[2];          // ltytest
+            String ip       = p[3];
+            int    port     = Integer.parseInt(p[4]);
+
+            /* ★ 校验：fromUser 必须等于我们之前记下的 incomingPeer */
+            if (!fromUser.equals(incomingPeer) || incomingSave == null) {
+                System.out.println("拦截: "+fromUser+" vs "+incomingPeer);
+                return;
             }
+
+            new Thread(() -> {
+                try {
+                    System.out.println("[DEBUG] try connect "+ip+":"+port);
+                    FileTransferManager.receiveFile(ip, port, incomingSave);
+                    JOptionPane.showMessageDialog(null,
+                            "文件接收完成，已保存到:\n" + incomingSave.getAbsolutePath());
+                } catch (Exception ex) {
+                    if (incomingSave.exists()) incomingSave.delete();
+                    JOptionPane.showMessageDialog(null,
+                            "文件接收失败: " + ex.getMessage(),
+                            "错误", JOptionPane.ERROR_MESSAGE);
+                    ex.printStackTrace();
+                } finally {
+                    incomingPeer = null;
+                    incomingSave = null;
+                }
+            }).start();
         }
+
+
 
     }
     //向服务器发送聊天消息
@@ -471,9 +531,16 @@ public class ChatClient {
 
     /* === 私聊点对点发文件 === */
     public void sendFileToUser(String toUser, File f) {
-        sendCommand("FILE_OFFER "+toUser+" "+f.getName()+" "+f.length());
-        // 等对方 ACCEPT，详见接收线程分支
+        if (pendingFile != null) {
+            JOptionPane.showMessageDialog(null, "已有文件发送中，稍后再试"); return;
+        }
+        pendingPeer = toUser.trim();   // 对方
+        pendingFile = f;
+
+        // ★ 把自己的昵称 (myName) 作为第 2 段附带
+        sendCommand("FILE_OFFER " + toUser + " " + username + " " + f.getName() + " " + f.length());
     }
+
 
 }
 
