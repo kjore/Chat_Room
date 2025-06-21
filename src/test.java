@@ -1,16 +1,9 @@
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+
 import java.util.Enumeration;
-
 //聊天窗口关闭后不能继续接收消息
-
 public class test {
     public static void main(String[] args) {
         ChatClient chatClient = new ChatClient("127.0.0.1");//此地址在不同设备登陆时需要改为实际服务器地址  总共有两个需要改
