@@ -271,6 +271,7 @@ public class ChatFrame extends JFrame implements ActionListener {
                 File f = chooser.getSelectedFile();
                 // 调用 ChatClient 的文件传输接口
                 currentUser.getChatClient().sendFileToUser(peerId, f);
+                System.out.println("向"+peerId+"发送了一文件");
             }
         }
         else if (src == backButton) {
