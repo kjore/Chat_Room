@@ -1,11 +1,11 @@
 import javax.swing.*;
 import javax.swing.Timer;
-import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 import java.util.*;
 import java.util.List;
 
@@ -419,7 +419,7 @@ public class HomePageFrame extends JFrame implements ChatClient.MessageCallback 
             }
         }
         // 否则新建
-        GroupChatFrame gcf = new GroupChatFrame(currentUser, target);
+        GroupChatFrame gcf = new GroupChatFrame(currentUser, target,this);
         gcf.setTitle("群聊: " + target.getGroupName());
     }
 
@@ -607,7 +607,7 @@ public class HomePageFrame extends JFrame implements ChatClient.MessageCallback 
                 }
             }
             // 3. 新开窗口
-            GroupChatFrame gcf = new GroupChatFrame(currentUser, target);
+            GroupChatFrame gcf = new GroupChatFrame(currentUser, target,this);
             gcf.setTitle("群聊: " + target.getGroupName());
             gcf.displayMessage(from, content);
             gcf.setVisible(true);
@@ -626,11 +626,22 @@ public class HomePageFrame extends JFrame implements ChatClient.MessageCallback 
     }
 
 
-    // --- PATCH 2 --- 直接覆盖 onGroupMessageReceived / onGroupMemberJoined
     @Override
     public void onGroupMessageReceived(String from, String groupId, String content) {
-        handleIncomingGroupMessage(groupId, from, content);
+        // 查找对应的群聊窗口
+        boolean messageHandled = false;
+        for (Window window : Window.getWindows()) {
+            if (window instanceof GroupChatFrame frame &&
+                    frame.getGroup().getId().equals(groupId)) {
+                frame.displayMessage(from, content);
+                messageHandled = true;
+                break;
+            }
+        }
+
+
     }
+
 
     @Override
     public void onGroupMemberJoined(String groupId, String groupName, String username) {
@@ -672,5 +683,30 @@ public class HomePageFrame extends JFrame implements ChatClient.MessageCallback 
     @Override public void onUserStatusChanged() { SwingUtilities.invokeLater(this::refreshUserList); }
     @Override public void onUserListUpdated() { SwingUtilities.invokeLater(this::refreshUserList); SwingUtilities.invokeLater(this::refreshGroupList); }
 
-    @Override public void onGroupFileListReceived(String groupId, List<String> files) { /* no-op */ }
+    @Override
+    public void onGroupFileListReceived(String groupId, List<String> files) {
+        // 转发给对应的群聊窗口
+        boolean messageHandled = false;
+        for (Window window : Window.getWindows()) {
+            if (window instanceof GroupChatFrame frame &&
+                    frame.getGroup().getId().equals(groupId)) {
+                frame.onGroupFileListReceived(groupId, files);
+                messageHandled = true;
+                break;
+            }
+        }
+
+        // 如果没有群聊窗口打开，可以添加处理逻辑或忽略
+        if (!messageHandled && !files.isEmpty()) {
+            Group group = Group.findById(groupId);
+            if (group != null) {
+                JOptionPane.showMessageDialog(this,
+                        "收到" + group.getGroupName() + "群的文件列表，请打开群聊窗口查看",
+                        "群文件通知",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+    }
+
+
 }
