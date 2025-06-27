@@ -49,6 +49,7 @@ public class ChatClient {
         void onUserListUpdated();
         void onGroupMemberJoined(String groupId, String groupName, String username);
         void onGroupFileListReceived(String groupId, java.util.List<String> files);
+
     }
 
     public ChatClient(String username) {
