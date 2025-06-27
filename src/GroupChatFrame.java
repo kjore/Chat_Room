@@ -8,8 +8,7 @@ import java.util.List;
 /**
  * 群聊窗口，采用现代化UI设计，支持气泡聊天、文件传输和成员列表。
  */
-public class GroupChatFrame extends JFrame
-        implements ActionListener, ChatClient.MessageCallback {
+public class GroupChatFrame extends JFrame implements ActionListener {
 
     private final Host currentUser;
     private final Group group;
@@ -27,31 +26,25 @@ public class GroupChatFrame extends JFrame
     private JButton backButton;
     private JList<String> membersList;
     private DefaultListModel<String> membersModel;
-
+    private HomePageFrame homePageFrame;
     private int unreadCount = 0;
     private boolean isFrameActive = false;
 
 
-    public GroupChatFrame(Host currentUser, Group group) {
+    public GroupChatFrame(Host currentUser, Group group,HomePageFrame homePageFrame) {
         this.currentUser = currentUser;
         this.group = group;
-
+        this.homePageFrame = homePageFrame;
         initFrameSetup();
         initComponents();
         applyModernStyle();
 
-        // 注册回调，接收群文件列表、消息等
-        currentUser.getChatClient().setMessageCallback(this);
 
         setSize(1000, 800);
         setLocationRelativeTo(null);
         setVisible(true);
         setupActivityListener();
-        // 确保每次打开群聊窗口都重新注册回调
-        if (currentUser.getChatClient() != null) {
-            System.out.println("为群聊窗口[" + group.getGroupName() + "]设置消息回调");
-            currentUser.getChatClient().setMessageCallback(this);
-        }
+
     }
 
     public Group getGroup() {
@@ -224,7 +217,32 @@ public class GroupChatFrame extends JFrame
         styleButtonAsRounded(uploadBtn);
         styleButtonAsRounded(downloadBtn);
     }
-
+    public void onGroupFileListReceived(String groupId, List<String> files) {
+        if (!this.group.getId().equals(groupId)) return;
+        SwingUtilities.invokeLater(() -> {
+            if (files.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "群里当前没有文件。", "提示", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            String choice = (String) JOptionPane.showInputDialog(this, "请选择要下载的文件：", "下载群文件",
+                    JOptionPane.PLAIN_MESSAGE, null, files.toArray(new String[0]), files.get(0));
+            if (choice != null) {
+                JFileChooser fc = new JFileChooser();
+                fc.setSelectedFile(new File(choice));
+                if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+                    File dest = fc.getSelectedFile();
+                    new Thread(() -> {
+                        try {
+                            FileTransferManager.downloadGroup(groupId, choice, dest);
+                            JOptionPane.showMessageDialog(this, "下载完成：" + dest.getAbsolutePath(), "成功", JOptionPane.INFORMATION_MESSAGE);
+                        } catch (Exception ex) {
+                            JOptionPane.showMessageDialog(this, "下载失败：" + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }).start();
+                }
+            }
+        });
+    }
     private void styleButtonAsRounded(JButton button) {
         button.setContentAreaFilled(false);
         button.setFont(AppTheme.FONT_NORMAL);
@@ -276,74 +294,6 @@ public class GroupChatFrame extends JFrame
         messageField.requestFocusInWindow();
     }
 
-    @Override
-    public void onGroupMessageReceived(String from, String groupId, String content) {
-        if (this.group.getId().equals(groupId)) {
-            displayMessage(from, content);
-        }
-    }
-
-    @Override
-    public void onGroupFileListReceived(String groupId, List<String> files) {
-        if (!this.group.getId().equals(groupId)) return;
-        SwingUtilities.invokeLater(() -> {
-            if (files.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "群里当前没有文件。", "提示", JOptionPane.INFORMATION_MESSAGE);
-                return;
-            }
-            String choice = (String) JOptionPane.showInputDialog(this, "请选择要下载的文件：", "下载群文件",
-                    JOptionPane.PLAIN_MESSAGE, null, files.toArray(new String[0]), files.get(0));
-            if (choice != null) {
-                JFileChooser fc = new JFileChooser();
-                fc.setSelectedFile(new File(choice));
-                if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-                    File dest = fc.getSelectedFile();
-                    new Thread(() -> {
-                        try {
-                            FileTransferManager.downloadGroup(groupId, choice, dest);
-                            JOptionPane.showMessageDialog(this, "下载完成：" + dest.getAbsolutePath(), "成功", JOptionPane.INFORMATION_MESSAGE);
-                        } catch (Exception ex) {
-                            JOptionPane.showMessageDialog(this, "下载失败：" + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
-                        }
-                    }).start();
-                }
-            }
-        });
-    }
-
-    @Override
-    public void onMessageReceived(String from, String content) {}
-
-    @Override
-    public void onUserStatusChanged() {
-        updateMembersList();
-    }
-
-    @Override
-    public void onUserListUpdated() {
-        updateMembersList();
-    }
-
-    // 在GroupChatFrame的onGroupMemberJoined方法中添加
-    @Override
-    public void onGroupMemberJoined(String groupId, String groupName, String username) {
-        System.out.println("群聊窗口收到成员加入通知: " + groupId + " - " + username);
-
-        if (this.group.getId().equals(groupId)) {
-            // 确保本地Group对象与服务器同步
-            if (!this.group.isMember(username)) {
-                this.group.addMember(username);
-                Group.saveGroupsToFile("groupstmp.txt"); // 保存到本地
-            }
-
-            // 更新UI
-            SwingUtilities.invokeLater(this::updateMembersList);
-
-            // 添加系统消息提示
-            SwingUtilities.invokeLater(() ->
-                    chatBubblePanel.addMessage("系统", username + "加入了群聊", true));
-        }
-    }
 
     public void updateMembersList() {
         SwingUtilities.invokeLater(() -> {
