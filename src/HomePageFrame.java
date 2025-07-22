@@ -22,6 +22,9 @@ public class HomePageFrame extends JFrame implements ChatClient.MessageCallback 
 
     private JButton createGroupBtn;
     private JButton joinGroupBtn;
+    
+    // Digital clock panel
+    private DigitalClockPanel digitalClockPanel;
 
     // === PATCH G-2 : 在 GroupChatFrame.java 中添加 ===
     private String groupId;
@@ -244,6 +247,10 @@ public class HomePageFrame extends JFrame implements ChatClient.MessageCallback 
         contentPanel.add(welcomePanel, BorderLayout.CENTER);
 
         add(contentPanel, BorderLayout.CENTER);
+        
+        // Add digital clock panel at the bottom
+        digitalClockPanel = new DigitalClockPanel();
+        add(digitalClockPanel, BorderLayout.SOUTH);
 
         // 刷新列表内容
         refreshUserList();
@@ -672,6 +679,9 @@ public class HomePageFrame extends JFrame implements ChatClient.MessageCallback 
             @Override
             public void windowClosed(WindowEvent e) {
                 refreshTimer.stop();
+                if (digitalClockPanel != null) {
+                    digitalClockPanel.stopTimer();
+                }
             }
         });
     }
