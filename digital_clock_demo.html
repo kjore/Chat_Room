@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Clock Panel Demo</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .clock-container {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 800px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .clock-title {
+            color: #4051b5;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        
+        .time-zones {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+        }
+        
+        .time-zone {
+            text-align: center;
+        }
+        
+        .zone-name {
+            font-weight: bold;
+            color: #212121;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .time-display {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            color: #4051b5;
+            margin-bottom: 2px;
+        }
+        
+        .date-display {
+            font-size: 14px;
+            color: #757575;
+        }
+        
+        .demo-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px auto;
+            max-width: 800px;
+            text-align: center;
+        }
+        
+        .feature-list {
+            text-align: left;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        
+        .feature-list li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-info">
+        <h2>Digital Clock Panel - Java Swing Implementation Demo</h2>
+        <p>This web demo shows the functionality of the DigitalClockPanel component added to the Chat Room application.</p>
+    </div>
+
+    <div class="clock-container">
+        <div class="clock-title">世界时钟</div>
+        <div class="time-zones">
+            <div class="time-zone">
+                <div class="zone-name">本地时间</div>
+                <div class="time-display" id="local-time">--:--:--</div>
+                <div class="date-display" id="local-date">-------</div>
+            </div>
+            <div class="time-zone">
+                <div class="zone-name">UTC</div>
+                <div class="time-display" id="utc-time">--:--:--</div>
+                <div class="date-display" id="utc-date">-------</div>
+            </div>
+            <div class="time-zone">
+                <div class="zone-name">美东时间(EST)</div>
+                <div class="time-display" id="est-time">--:--:--</div>
+                <div class="date-display" id="est-date">-------</div>
+            </div>
+            <div class="time-zone">
+                <div class="zone-name">美西时间(PST)</div>
+                <div class="time-display" id="pst-time">--:--:--</div>
+                <div class="date-display" id="pst-date">-------</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="feature-list">
+        <h3>Digital Clock Features:</h3>
+        <ul>
+            <li>✅ Real-time updates every second</li>
+            <li>✅ Multiple timezone support (Local, UTC, EST, PST)</li>
+            <li>✅ Clean UI using existing AppTheme colors and fonts</li>
+            <li>✅ Integrated into HomePageFrame at the bottom</li>
+            <li>✅ Monospaced font for consistent time display</li>
+            <li>✅ Timer cleanup on window close</li>
+            <li>✅ Minimal integration with existing codebase</li>
+        </ul>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            
+            // Local time
+            const localTime = now.toLocaleTimeString('en-GB', {hour12: false});
+            const localDate = now.toLocaleDateString('en-CA');
+            document.getElementById('local-time').textContent = localTime;
+            document.getElementById('local-date').textContent = localDate;
+            
+            // UTC time
+            const utcTime = now.toLocaleTimeString('en-GB', {timeZone: 'UTC', hour12: false});
+            const utcDate = now.toLocaleDateString('en-CA', {timeZone: 'UTC'});
+            document.getElementById('utc-time').textContent = utcTime;
+            document.getElementById('utc-date').textContent = utcDate;
+            
+            // EST time
+            const estTime = now.toLocaleTimeString('en-GB', {timeZone: 'America/New_York', hour12: false});
+            const estDate = now.toLocaleDateString('en-CA', {timeZone: 'America/New_York'});
+            document.getElementById('est-time').textContent = estTime;
+            document.getElementById('est-date').textContent = estDate;
+            
+            // PST time
+            const pstTime = now.toLocaleTimeString('en-GB', {timeZone: 'America/Los_Angeles', hour12: false});
+            const pstDate = now.toLocaleDateString('en-CA', {timeZone: 'America/Los_Angeles'});
+            document.getElementById('pst-time').textContent = pstTime;
+            document.getElementById('pst-date').textContent = pstDate;
+        }
+        
+        // Update immediately and then every second
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>
